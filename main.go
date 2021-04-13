@@ -11,9 +11,8 @@ import (
 	"github.com/unixlab/kafkaping/server"
 )
 
-func printHelpAndExit() {
+func printHelp() {
 	fmt.Println("kafkaping (server|client) [-s ssl] [-b broker,broker,...] [-p port]")
-	os.Exit(1)
 }
 
 func main() {
@@ -22,7 +21,8 @@ func main() {
 	var sslEnabled bool
 
 	if len(os.Args) < 2 {
-		printHelpAndExit()
+		printHelp()
+		os.Exit(0)
 	}
 
 	kafkaFlags := flag.NewFlagSet("",flag.ExitOnError)
@@ -45,6 +45,6 @@ func main() {
 	case "client":
 		client.Run(kafkaConfig)
 	default:
-		printHelpAndExit()
+		printHelp()
 	}
 }
