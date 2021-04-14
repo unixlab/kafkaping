@@ -61,6 +61,11 @@ func main() {
 	kafkaConfig.SSL = sslEnabled
 
 	if sslEnabled {
+		if caCertPath == "" {
+			fmt.Println("SSL is enabled, but --cacert is not set")
+			os.Exit(0)
+		}
+
 		_, err := os.Stat(caCertPath)
 		if os.IsNotExist(err) {
 			fmt.Println("provided cacert could not be loaded")
