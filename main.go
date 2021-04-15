@@ -94,6 +94,11 @@ func main() {
 		server.Run(kafkaConfig)
 	case "client":
 		client.Run(kafkaConfig)
+	case "both":
+		kafkaConfig.ClientName = "server"
+		go server.Run(kafkaConfig)
+		kafkaConfig.ClientName = "client"
+		client.Run(kafkaConfig)
 	default:
 		printHelp()
 	}
