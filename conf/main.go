@@ -1,6 +1,8 @@
 package conf
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"time"
 
@@ -21,5 +23,15 @@ func (c ConfigFlags) GenerateSaramaConfig() *sarama.Config {
 	kafkaConfig.Producer.Retry.Max = 2
 	kafkaConfig.Producer.RequiredAcks = sarama.WaitForAll
 	kafkaConfig.Producer.Return.Successes = true
+
+	if c.SSL {
+		tlsConfig := tls.Config{}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(c.CACertBytes)
+		tlsConfig.RootCAs = caCertPool
+		kafkaConfig.Net.TLS.Enable = true
+		kafkaConfig.Net.TLS.Config = &tlsConfig
+	}
+
 	return kafkaConfig
 }

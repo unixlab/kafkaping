@@ -21,7 +21,7 @@ func checkErr(err error) {
 }
 
 func printHelp() {
-	fmt.Println("kafkaping (server|client) [-s ssl] [-b broker,broker,...] [-p port]")
+	fmt.Println("kafkaping (server|client|both) [-b broker,broker,...] [-p port] [-s ssl] [--cacapth path]")
 }
 
 func main() {
@@ -37,7 +37,7 @@ func main() {
 	}
 
 	kafkaFlags := flag.NewFlagSet("", flag.ExitOnError)
-	kafkaFlags.StringVar(&brokerList, "b", "127.0.0.1", "list of kafka brokers. comma separated")
+	kafkaFlags.StringVar(&brokerList, "b", "localhost", "list of kafka brokers. comma separated")
 	kafkaFlags.IntVar(&brokerPort, "p", 9092, "kafka port")
 	kafkaFlags.BoolVar(&sslEnabled, "s", false, "use ssl")
 	kafkaFlags.StringVar(&caCertPath, "cacert", "", "CA certificate")
