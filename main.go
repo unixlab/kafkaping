@@ -42,7 +42,9 @@ func main() {
 	kafkaFlags.BoolVar(&sslEnabled, "s", false, "use ssl")
 	kafkaFlags.StringVar(&caCertPath, "cacert", "", "CA certificate")
 	kafkaFlags.IntVar(&waitTime, "w", 400, "wait time between messages in milliseconds")
-	kafkaFlags.Parse(os.Args[2:])
+
+	err := kafkaFlags.Parse(os.Args[2:])
+	checkErr(err)
 
 	var kafkaConfig conf.ConfigFlags
 
@@ -66,7 +68,7 @@ func main() {
 			os.Exit(0)
 		}
 
-		_, err := os.Stat(caCertPath)
+		_, err = os.Stat(caCertPath)
 		if os.IsNotExist(err) {
 			fmt.Println("provided cacert could not be loaded")
 			os.Exit(0)
@@ -74,7 +76,8 @@ func main() {
 			panic(err)
 		}
 
-		caCertBytes, err := ioutil.ReadFile(caCertPath)
+		var caCertBytes []byte
+		caCertBytes, err = ioutil.ReadFile(caCertPath)
 		checkErr(err)
 
 		// sanity check

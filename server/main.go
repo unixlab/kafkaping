@@ -13,12 +13,18 @@ func checkErr(err error) {
 }
 
 func Run(configFlags conf.ConfigFlags) {
-	kafkaConsumer, err := sarama.NewConsumer(configFlags.Brokers, configFlags.GenerateSaramaConfig())
-	checkErr(err)
-	pingConsumer, err := kafkaConsumer.ConsumePartition("ping", 0, sarama.OffsetNewest)
+	var err error
+
+	var kafkaConsumer sarama.Consumer
+	kafkaConsumer, err = sarama.NewConsumer(configFlags.Brokers, configFlags.GenerateSaramaConfig())
 	checkErr(err)
 
-	kafkaProducer, err := sarama.NewSyncProducer(configFlags.Brokers, configFlags.GenerateSaramaConfig())
+	var pingConsumer sarama.PartitionConsumer
+	pingConsumer, err = kafkaConsumer.ConsumePartition("ping", 0, sarama.OffsetNewest)
+	checkErr(err)
+
+	var kafkaProducer sarama.SyncProducer
+	kafkaProducer, err = sarama.NewSyncProducer(configFlags.Brokers, configFlags.GenerateSaramaConfig())
 	checkErr(err)
 
 	defer func() {
@@ -34,7 +40,9 @@ func Run(configFlags conf.ConfigFlags) {
 			Topic: "pong",
 			Value: sarama.StringEncoder(msgRecv.Value),
 		}
-		partition, _, err := kafkaProducer.SendMessage(msgSend)
+
+		var partition int32
+		partition, _, err = kafkaProducer.SendMessage(msgSend)
 		checkErr(err)
 
 		if partition != 0 {

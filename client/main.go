@@ -17,13 +17,18 @@ func checkErr(err error) {
 }
 
 func Run(configFlags conf.ConfigFlags) {
-	kafkaConsumer, err := sarama.NewConsumer(configFlags.Brokers, configFlags.GenerateSaramaConfig())
+	var err error
+
+	var kafkaConsumer sarama.Consumer
+	kafkaConsumer, err = sarama.NewConsumer(configFlags.Brokers, configFlags.GenerateSaramaConfig())
 	checkErr(err)
 
-	pongConsumer, err := kafkaConsumer.ConsumePartition("pong", 0, sarama.OffsetNewest)
+	var pongConsumer sarama.PartitionConsumer
+	pongConsumer, err = kafkaConsumer.ConsumePartition("pong", 0, sarama.OffsetNewest)
 	checkErr(err)
 
-	kafkaProducer, err := sarama.NewSyncProducer(configFlags.Brokers, configFlags.GenerateSaramaConfig())
+	var kafkaProducer sarama.SyncProducer
+	kafkaProducer, err = sarama.NewSyncProducer(configFlags.Brokers, configFlags.GenerateSaramaConfig())
 	checkErr(err)
 
 	defer func() {
@@ -40,7 +45,8 @@ func Run(configFlags conf.ConfigFlags) {
 				Value: sarama.StringEncoder(strconv.FormatInt(time.Now().UnixNano(), 10)),
 			}
 
-			partition, _, err := kafkaProducer.SendMessage(msgSend)
+			var partition int32
+			partition, _, err = kafkaProducer.SendMessage(msgSend)
 			checkErr(err)
 
 			if partition != 0 {
@@ -52,15 +58,21 @@ func Run(configFlags conf.ConfigFlags) {
 	}()
 
 	for {
+		var timestampStart, timestampEnd int64
+
 		msgRecv := <-pongConsumer.Messages()
-		timestampStart, err := strconv.ParseInt(string(msgRecv.Value), 10, 64)
+
+		timestampStart, err = strconv.ParseInt(string(msgRecv.Value), 10, 64)
 		if err != nil {
 			continue
 		}
-		timestampEnd := time.Now().UnixNano()
+
+		timestampEnd = time.Now().UnixNano()
+
 		roundTripTime := timestampEnd - timestampStart
 
-		duration, err := time.ParseDuration(strconv.FormatInt(roundTripTime, 10) + "ns")
+		var duration time.Duration
+		duration, err = time.ParseDuration(strconv.FormatInt(roundTripTime, 10) + "ns")
 		checkErr(err)
 
 		fmt.Printf("%s\n", duration.String())
