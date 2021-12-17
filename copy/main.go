@@ -1,4 +1,4 @@
-package server
+package copy
 
 import (
 	"github.com/unixlab/kafkaping/conf"

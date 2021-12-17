@@ -4,14 +4,14 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
+	"github.com/unixlab/kafkaping/conf"
+	"github.com/unixlab/kafkaping/ping"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/unixlab/kafkaping/client"
-	"github.com/unixlab/kafkaping/conf"
-	"github.com/unixlab/kafkaping/server"
+	"github.com/unixlab/kafkaping/copy"
 )
 
 func checkErr(err error) {
@@ -21,7 +21,7 @@ func checkErr(err error) {
 }
 
 func printHelp(kafkaFlags *flag.FlagSet) {
-	fmt.Println("kafkaping (server|client|both) [-b broker,broker,...] [more Options]")
+	fmt.Println("kafkaping (copy|ping|both) [-b broker,broker,...] [more Options]")
 	fmt.Println()
 	fmt.Println("Options:")
 	kafkaFlags.PrintDefaults()
@@ -44,10 +44,10 @@ func main() {
 	kafkaFlags.BoolVar(&sslEnabled, "s", false, "use ssl")
 	kafkaFlags.StringVar(&caCertPath, "cacert", "", "CA certificate")
 	kafkaFlags.IntVar(&waitTime, "w", 400, "wait time between messages in milliseconds")
-	kafkaFlags.StringVar(&sourceTopic, "src", "ping", "kafka source topic (server only)")
-	kafkaFlags.StringVar(&destinationTopic, "dst", "pong", "kafka destination topic (server only)")
-	kafkaFlags.StringVar(&writeToTopic, "write-to", "ping", "kafka topic to write to (client only)")
-	kafkaFlags.StringVar(&readFromTopic, "read-from", "pong", "kafka topic to read from (client only)")
+	kafkaFlags.StringVar(&sourceTopic, "src", "ping", "kafka source topic (copy only)")
+	kafkaFlags.StringVar(&destinationTopic, "dst", "pong", "kafka destination topic (copy only)")
+	kafkaFlags.StringVar(&writeToTopic, "write-to", "ping", "kafka topic to write to (ping only)")
+	kafkaFlags.StringVar(&readFromTopic, "read-from", "pong", "kafka topic to read from (ping only)")
 
 	if len(os.Args) < 2 {
 		printHelp(kafkaFlags)
@@ -59,7 +59,7 @@ func main() {
 
 	var kafkaConfig conf.ConfigFlags
 
-	kafkaConfig.ClientName = os.Args[1]
+	kafkaConfig.Mode = os.Args[1]
 	kafkaConfig.WaitTime = time.Duration(waitTime) * time.Millisecond
 
 	for _, broker := range strings.Split(brokerList, ",") {
@@ -104,15 +104,15 @@ func main() {
 	}
 
 	switch os.Args[1] {
-	case "server":
-		server.Run(kafkaConfig, sourceTopic, destinationTopic)
-	case "client":
-		client.Run(kafkaConfig, readFromTopic, writeToTopic)
+	case "copy":
+		copy.Run(kafkaConfig, sourceTopic, destinationTopic)
+	case "ping":
+		ping.Run(kafkaConfig, readFromTopic, writeToTopic)
 	case "both":
-		kafkaConfig.ClientName = "server"
-		go server.Run(kafkaConfig, sourceTopic, destinationTopic)
-		kafkaConfig.ClientName = "client"
-		client.Run(kafkaConfig, sourceTopic, destinationTopic)
+		kafkaConfig.Mode = "copy"
+		go copy.Run(kafkaConfig, sourceTopic, destinationTopic)
+		kafkaConfig.Mode = "ping"
+		ping.Run(kafkaConfig, sourceTopic, destinationTopic)
 	default:
 		printHelp(kafkaFlags)
 	}
