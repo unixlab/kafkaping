@@ -16,7 +16,7 @@ func checkErr(err error) {
 	}
 }
 
-func Run(configFlags conf.ConfigFlags) {
+func Run(configFlags conf.ConfigFlags, readFromTopic string, writeToTopic string) {
 	var err error
 
 	var kafkaConsumer sarama.Consumer
@@ -24,7 +24,7 @@ func Run(configFlags conf.ConfigFlags) {
 	checkErr(err)
 
 	var pongConsumer sarama.PartitionConsumer
-	pongConsumer, err = kafkaConsumer.ConsumePartition("pong", 0, sarama.OffsetNewest)
+	pongConsumer, err = kafkaConsumer.ConsumePartition(readFromTopic, 0, sarama.OffsetNewest)
 	checkErr(err)
 
 	var kafkaProducer sarama.SyncProducer
@@ -41,7 +41,7 @@ func Run(configFlags conf.ConfigFlags) {
 	go func() {
 		for {
 			msgSend := &sarama.ProducerMessage{
-				Topic: "ping",
+				Topic: writeToTopic,
 				Value: sarama.StringEncoder(strconv.FormatInt(time.Now().UnixNano(), 10)),
 			}
 
@@ -50,7 +50,7 @@ func Run(configFlags conf.ConfigFlags) {
 			checkErr(err)
 
 			if partition != 0 {
-				panic("ping topic has more than 1 partition")
+				panic(fmt.Sprintf("topic %s has more than 1 partition", writeToTopic))
 			}
 
 			time.Sleep(configFlags.WaitTime)

@@ -12,7 +12,7 @@ func checkErr(err error) {
 	}
 }
 
-func Run(configFlags conf.ConfigFlags) {
+func Run(configFlags conf.ConfigFlags, sourceTopic string, destinationTopic string) {
 	var err error
 
 	var kafkaConsumer sarama.Consumer
@@ -20,7 +20,7 @@ func Run(configFlags conf.ConfigFlags) {
 	checkErr(err)
 
 	var pingConsumer sarama.PartitionConsumer
-	pingConsumer, err = kafkaConsumer.ConsumePartition("ping", 0, sarama.OffsetNewest)
+	pingConsumer, err = kafkaConsumer.ConsumePartition(sourceTopic, 0, sarama.OffsetNewest)
 	checkErr(err)
 
 	var kafkaProducer sarama.SyncProducer
@@ -37,7 +37,7 @@ func Run(configFlags conf.ConfigFlags) {
 	for {
 		msgRecv := <-pingConsumer.Messages()
 		msgSend := &sarama.ProducerMessage{
-			Topic: "pong",
+			Topic: destinationTopic,
 			Value: sarama.StringEncoder(msgRecv.Value),
 		}
 

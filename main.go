@@ -20,8 +20,11 @@ func checkErr(err error) {
 	}
 }
 
-func printHelp() {
-	fmt.Println("kafkaping (server|client|both) [-b broker,broker,...] [-p port] [-s ssl] [--cacapth path]")
+func printHelp(kafkaFlags *flag.FlagSet) {
+	fmt.Println("kafkaping (server|client|both) [-b broker,broker,...] [more Options]")
+	fmt.Println()
+	fmt.Println("Options:")
+	kafkaFlags.PrintDefaults()
 }
 
 func main() {
@@ -30,11 +33,10 @@ func main() {
 	var sslEnabled bool
 	var caCertPath string
 	var waitTime int
-
-	if len(os.Args) < 2 {
-		printHelp()
-		os.Exit(0)
-	}
+	var sourceTopic string
+	var destinationTopic string
+	var writeToTopic string
+	var readFromTopic string
 
 	kafkaFlags := flag.NewFlagSet("", flag.ExitOnError)
 	kafkaFlags.StringVar(&brokerList, "b", "localhost", "list of kafka brokers. comma separated")
@@ -42,6 +44,15 @@ func main() {
 	kafkaFlags.BoolVar(&sslEnabled, "s", false, "use ssl")
 	kafkaFlags.StringVar(&caCertPath, "cacert", "", "CA certificate")
 	kafkaFlags.IntVar(&waitTime, "w", 400, "wait time between messages in milliseconds")
+	kafkaFlags.StringVar(&sourceTopic, "src", "ping", "kafka source topic (server only)")
+	kafkaFlags.StringVar(&destinationTopic, "dst", "pong", "kafka destination topic (server only)")
+	kafkaFlags.StringVar(&writeToTopic, "write-to", "ping", "kafka topic to write to (client only)")
+	kafkaFlags.StringVar(&readFromTopic, "read-from", "pong", "kafka topic to read from (client only)")
+
+	if len(os.Args) < 2 {
+		printHelp(kafkaFlags)
+		os.Exit(0)
+	}
 
 	err := kafkaFlags.Parse(os.Args[2:])
 	checkErr(err)
@@ -94,15 +105,15 @@ func main() {
 
 	switch os.Args[1] {
 	case "server":
-		server.Run(kafkaConfig)
+		server.Run(kafkaConfig, sourceTopic, destinationTopic)
 	case "client":
-		client.Run(kafkaConfig)
+		client.Run(kafkaConfig, readFromTopic, writeToTopic)
 	case "both":
 		kafkaConfig.ClientName = "server"
-		go server.Run(kafkaConfig)
+		go server.Run(kafkaConfig, sourceTopic, destinationTopic)
 		kafkaConfig.ClientName = "client"
-		client.Run(kafkaConfig)
+		client.Run(kafkaConfig, sourceTopic, destinationTopic)
 	default:
-		printHelp()
+		printHelp(kafkaFlags)
 	}
 }
