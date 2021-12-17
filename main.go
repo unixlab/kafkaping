@@ -4,14 +4,14 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
-	"github.com/unixlab/kafkaping/conf"
-	"github.com/unixlab/kafkaping/ping"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/unixlab/kafkaping/conf"
 	"github.com/unixlab/kafkaping/copy"
+	"github.com/unixlab/kafkaping/ping"
 )
 
 func checkErr(err error) {
